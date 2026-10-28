@@ -130,85 +130,14 @@ fun ConteoCrudScreen(
 
                 ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        val sexos = listOf("Hombre", "Mujer", "Otro")
-                        val edades = listOf("Adolescente", "Joven", "Adulto", "Tercera Edad")
-                        Text(
-                            text = "1. ¿Realizó Compra?",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextMuted,
-                            fontWeight = FontWeight.Bold
+                        PanelChipsPerfil(
+                            compro = state.comproSeleccionado,
+                            sexo = state.sexoSeleccionado,
+                            rangoEtario = state.rangoEtarioSeleccionado,
+                            onComproChange = vm::onComproChange,
+                            onSexoChange = vm::onSexoChange,
+                            onRangoEtarioChange = vm::onRangoEtarioChange
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = !state.comproSeleccionado,
-                                onClick = { vm.onComproChange(false) },
-                                label = { Text("Solo Tránsito") },
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilterChip(
-                                selected = state.comproSeleccionado,
-                                onClick = { vm.onComproChange(true) },
-                                label = { Text("Compró") },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = AccentGreen.copy(alpha = 0.2f)
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Text(
-                            text = "2. Sexo Estimado",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextMuted,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            sexos.forEach { opcionSexo ->
-                                FilterChip(
-                                    selected = state.sexoSeleccionado == opcionSexo,
-                                    onClick = { vm.onSexoChange(opcionSexo) },
-                                    label = { Text(opcionSexo) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                        Text(
-                            text = "3. Rango Etario",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextMuted,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            edades.take(2).forEach { opcionEdad ->
-                                FilterChip(
-                                    selected = state.rangoEtarioSeleccionado == opcionEdad,
-                                    onClick = { vm.onRangoEtarioChange(opcionEdad) },
-                                    label = { Text(opcionEdad) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            edades.drop(2).forEach { opcionEdad ->
-                                FilterChip(
-                                    selected = state.rangoEtarioSeleccionado == opcionEdad,
-                                    onClick = { vm.onRangoEtarioChange(opcionEdad) },
-                                    label = { Text(opcionEdad) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
 
                         Spacer(Modifier.height(6.dp))
 
