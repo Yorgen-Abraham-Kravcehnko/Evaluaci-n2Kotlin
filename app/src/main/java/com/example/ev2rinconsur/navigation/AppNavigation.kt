@@ -30,17 +30,30 @@ fun AppNavigation(
                 onLoginOkNavigateHome = {
                     navController.navigate(Route.Home.path) {
                         popUpTo(Route.Login.path) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
-                onGoRegister = { navController.navigate(Route.Register.path) }
+                onGoRegister = {
+                    authViewModel.clearLoginResult()
+                    navController.navigate(Route.Register.path) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
         composable(Route.Register.path) {
             RegisterScreenVm(
                 vm = authViewModel,
-                onRegisteredNavigateLogin = { navController.popBackStack() },
-                onGoLogin = { navController.popBackStack() }
+                onRegisteredNavigateLogin = {
+                    authViewModel.clearLoginResult()
+                    navController.popBackStack()
+                },
+                onGoLogin = {
+                    authViewModel.clearRegisterResult()
+                    authViewModel.clearLoginResult()
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -48,10 +61,27 @@ fun AppNavigation(
             HomeScreen(
                 authViewModel = authViewModel,
                 conteoViewModel = conteoViewModel,
-                onGoProfile = { navController.navigate(Route.Profile.path) },
-                onGoCrud = { navController.navigate(Route.Crud.path) },
-                onGoTotals = { navController.navigate(Route.Totals.path) },
-                onGoHistory = { navController.navigate(Route.History.path) }
+                onGoProfile = {
+                    navController.navigate(Route.Profile.path) {
+                        launchSingleTop = true
+                    }
+                },
+                onGoCrud = {
+                    navController.navigate(Route.Crud.path) {
+                        launchSingleTop = true
+                    }
+                },
+                onGoTotals = {
+                    navController.navigate(Route.Totals.path) {
+                        launchSingleTop = true
+                    }
+                },
+                onGoHistory = {
+                    conteoViewModel.abrirHistorialTurnosAnteriores()
+                    navController.navigate(Route.History.path) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -63,6 +93,7 @@ fun AppNavigation(
                 onLogout = {
                     navController.navigate(Route.Login.path) {
                         popUpTo(Route.Home.path) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -73,8 +104,9 @@ fun AppNavigation(
                 vm = conteoViewModel,
                 onBack = { navController.popBackStack() },
                 onFinishTurno = {
-                    navController.navigate(Route.Totals.path) {
+                    navController.navigate(Route.History.path) {
                         popUpTo(Route.Home.path)
+                        launchSingleTop = true
                     }
                 }
             )
@@ -84,8 +116,17 @@ fun AppNavigation(
             TotalesScreen(
                 vm = conteoViewModel,
                 onBack = { navController.popBackStack() },
-                onGoHistory = { navController.navigate(Route.History.path) },
-                onGoCrud = { navController.navigate(Route.Crud.path) }
+                onGoHistory = {
+                    conteoViewModel.abrirRegistrosDelDia()
+                    navController.navigate(Route.History.path) {
+                        launchSingleTop = true
+                    }
+                },
+                onGoCrud = {
+                    navController.navigate(Route.Crud.path) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
