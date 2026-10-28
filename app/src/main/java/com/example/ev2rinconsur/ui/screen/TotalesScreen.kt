@@ -40,10 +40,15 @@ fun TotalesScreen(
     onGoHistory: () -> Unit,
     onGoCrud: () -> Unit
 ) {
+    val state by vm.uiState.collectAsStateWithLifecycle()
     val registros by vm.registros.collectAsStateWithLifecycle()
+    val fechaHoy = vm.obtenerFechaHoy()
+    val registrosHoy = registros.filter {
+        it.fecha == fechaHoy && it.id !in state.idsCerradosEnTurno
+    }
 
-    val total = registros.size
-    val compraron = registros.count { it.compro }
+    val total = registrosHoy.size
+    val compraron = registrosHoy.count { it.compro }
     val transito = total - compraron
 
     val pctCompra = if (total > 0) (compraron * 100) / total else 0
@@ -51,7 +56,7 @@ fun TotalesScreen(
 
     Scaffold(
         topBar = {
-            AppTopBar(title = "Registros Totales", onBack = onBack)
+            AppTopBar(title = "Registros Totales del Día", onBack = onBack)
         }
     ) { innerPadding ->
         Column(
@@ -64,7 +69,7 @@ fun TotalesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "CONSOLIDADO DE FLUJO POR ACCESOS",
+                text = "CONSOLIDADO DIARIO POR ACCESOS · $fechaHoy",
                 style = MaterialTheme.typography.labelMedium,
                 color = TextMuted,
                 fontWeight = FontWeight.Bold
@@ -84,7 +89,7 @@ fun TotalesScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Total Clientes Registrados",
+                        text = "Total Clientes Ingresados Hoy",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextMuted
                     )
@@ -130,7 +135,7 @@ fun TotalesScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Solo Transito ($pctTransito%)",
+                            text = "Solo Tránsito ($pctTransito%)",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextMuted
                         )
@@ -144,13 +149,13 @@ fun TotalesScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Ingresos por Acceso",
+                        text = "Ingresos de Hoy por Acceso",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
 
                     vm.accesosDisponibles.forEach { acceso ->
-                        val cantidadAcceso = registros.count { it.acceso == acceso }
+                        val cantidadAcceso = registrosHoy.count { it.acceso == acceso }
                         val progreso = if (total > 0) cantidadAcceso.toFloat() / total.toFloat() else 0f
 
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -185,7 +190,7 @@ fun TotalesScreen(
                 onClick = onGoHistory,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ver Historial de Registros")
+                Text("Ver Historial de Registros del Día")
             }
 
             Button(

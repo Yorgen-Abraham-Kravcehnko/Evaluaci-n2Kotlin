@@ -13,14 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ev2rinconsur.ui.components.AppTopBar
+import com.example.ev2rinconsur.ui.components.SelectorDesplegable
 import com.example.ev2rinconsur.ui.theme.AccentGreen
 import com.example.ev2rinconsur.ui.theme.BackgroundLight
 import com.example.ev2rinconsur.ui.theme.PrimaryBlue
@@ -41,7 +37,6 @@ import com.example.ev2rinconsur.ui.theme.TextMuted
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
 import com.example.ev2rinconsur.ui.viewmodel.ConteoViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     authViewModel: AuthViewModel,
@@ -55,9 +50,23 @@ fun HomeScreen(
     val uiState by conteoViewModel.uiState.collectAsStateWithLifecycle()
     val registros by conteoViewModel.registros.collectAsStateWithLifecycle()
 
-    val totalIngresos = registros.size
-    val totalCompraron = registros.count { it.compro }
-    val porcentajeCompra = if (totalIngresos > 0) (totalCompraron * 100) / totalIngresos else 0
+    val fechaHoy = conteoViewModel.obtenerFechaHoy()
+    val registrosHoy = registros.filter {
+        it.fecha == fechaHoy && it.id !in uiState.idsCerradosEnTurno
+    }
+
+    val totalIngresosHoy = registrosHoy.size
+    val totalCompraronHoy = registrosHoy.count { it.compro }
+    val porcentajeCompraHoy = if (totalIngresosHoy > 0) (totalCompraronHoy * 100) / totalIngresosHoy else 0
+
+    val registrosTurnoSeleccionado = registrosHoy.filter {
+        it.acceso == uiState.accesoActivo &&
+            it.turno == uiState.turnoActivo &&
+            it.id !in uiState.idsCerradosEnTurno
+    }
+    val contadosTurno = registrosTurnoSeleccionado.size
+    val compraronTurno = registrosTurnoSeleccionado.count { it.compro }
+    val transitoTurno = contadosTurno - compraronTurno
 
     var expandedAcceso by remember { mutableStateOf(false) }
     var expandedTurno by remember { mutableStateOf(false) }
@@ -84,78 +93,53 @@ fun HomeScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "CONFIGURACION DEL TURNO ACTIVO",
+                        text = "CONFIGURACIÓN DEL TURNO ACTIVO",
                         style = MaterialTheme.typography.labelMedium,
                         color = TextMuted,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(10.dp))
 
-                    ExposedDropdownMenuBox(
-                        expanded = expandedAcceso,
-                        onExpandedChange = { expandedAcceso = !expandedAcceso }
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.accesoActivo,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Punto de Acceso") },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAcceso)
-                            },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandedAcceso,
-                            onDismissRequest = { expandedAcceso = false }
-                        ) {
-                            conteoViewModel.accesosDisponibles.forEach { opcion ->
-                                DropdownMenuItem(
-                                    text = { Text(opcion) },
-                                    onClick = {
-                                        conteoViewModel.onAccesoChange(opcion)
-                                        expandedAcceso = false
-                                    }
-                                )
-                            }
+                    SelectorDesplegable(
+                        label = "Punto de Acceso",
+                        valorActual = uiState.accesoActivo,
+                        opciones = conteoViewModel.accesosDisponibles,
+                        expandido = expandedAcceso,
+                        onToggleExpandido = {
+                            expandedAcceso = !expandedAcceso
+                            if (expandedAcceso) expandedTurno = false
+                        },
+                        onSeleccionar = { opcion ->
+                            conteoViewModel.onAccesoChange(opcion)
+                            expandedAcceso = false
                         }
-                    }
+                    )
 
                     Spacer(Modifier.height(10.dp))
 
-                    ExposedDropdownMenuBox(
-                        expanded = expandedTurno,
-                        onExpandedChange = { expandedTurno = !expandedTurno }
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.turnoActivo,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Jornada / Turno") },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTurno)
-                            },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandedTurno,
-                            onDismissRequest = { expandedTurno = false }
-                        ) {
-                            conteoViewModel.turnosDisponibles.forEach { opcion ->
-                                DropdownMenuItem(
-                                    text = { Text(opcion) },
-                                    onClick = {
-                                        conteoViewModel.onTurnoChange(opcion)
-                                        expandedTurno = false
-                                    }
-                                )
-                            }
+                    SelectorDesplegable(
+                        label = "Jornada / Turno",
+                        valorActual = uiState.turnoActivo,
+                        opciones = conteoViewModel.turnosDisponibles,
+                        expandido = expandedTurno,
+                        onToggleExpandido = {
+                            expandedTurno = !expandedTurno
+                            if (expandedTurno) expandedAcceso = false
+                        },
+                        onSeleccionar = { opcion ->
+                            conteoViewModel.onTurnoChange(opcion)
+                            expandedTurno = false
                         }
-                    }
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Text(
+                        text = "En este acceso y turno hoy: $contadosTurno contados ($compraronTurno compraron · $transitoTurno tránsito)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = PrimaryBlue,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
@@ -183,7 +167,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Flujo Acumulado Hoy",
+                            text = "Flujo Acumulado Hoy ($fechaHoy)",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -209,13 +193,13 @@ fun HomeScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "$totalIngresos",
+                                    text = "$totalIngresosHoy",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = PrimaryBlue,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Ingresos Totales",
+                                    text = "Ingresos Hoy (4 Accesos)",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = TextMuted
                                 )
@@ -230,13 +214,13 @@ fun HomeScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "$totalCompraron",
+                                    text = "$totalCompraronHoy",
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = AccentGreen,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Compraron ($porcentajeCompra%)",
+                                    text = "Compraron ($porcentajeCompraHoy%)",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = TextMuted
                                 )
@@ -250,7 +234,7 @@ fun HomeScreen(
                         onClick = onGoTotals,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Ver Registros Totales del Dia")
+                        Text("Ver Registros Totales del Día")
                     }
                 }
             }

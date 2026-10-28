@@ -2,6 +2,7 @@ package com.example.ev2rinconsur.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ev2rinconsur.data.local.database.AppDatabase
 import com.example.ev2rinconsur.data.local.registro.RegistroAccesoEntity
 import com.example.ev2rinconsur.data.repository.RegistroRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,15 +23,35 @@ data class ConteoUiState(
     val sexoSeleccionado: String = "Hombre",
     val rangoEtarioSeleccionado: String = "Joven",
     val filtroHistorial: String = "",
+    val modoHistorialDiaActual: Boolean = false,
+    val fechaTurnoSeleccionado: String = "",
+    val nombreTurnoSeleccionado: String = "",
     val registroEnEdicion: RegistroAccesoEntity? = null,
     val registroAEliminar: RegistroAccesoEntity? = null,
     val mostrarResumenFinal: Boolean = false,
-    val mensajeConfirmacion: String? = null
-)
+    val mostrarAlertaSalirSinGuardar: Boolean = false,
+    val nuevosPendientes: List<RegistroAccesoEntity> = emptyList(),
+    val editadosPendientes: Map<Long, RegistroAccesoEntity> = emptyMap(),
+    val eliminadosPendientes: Set<Long> = emptySet(),
+    val idsCerradosEnTurno: Set<Long> = emptySet()
+) {
+    val hayCambiosSinGuardar: Boolean
+        get() = nuevosPendientes.isNotEmpty() ||
+            editadosPendientes.isNotEmpty() ||
+            eliminadosPendientes.isNotEmpty()
+}
 
 class ConteoViewModel(
     private val repo: RegistroRepository
 ) : ViewModel() {
+
+    private var tempIdCounter = -1L
+
+    init {
+        viewModelScope.launch {
+            repo.ensureSeedRegistros()
+        }
+    }
 
     val registros: StateFlow<List<RegistroAccesoEntity>> =
         repo.registros.stateIn(
@@ -44,15 +65,17 @@ class ConteoViewModel(
 
     val accesosDisponibles = listOf(
         "Acceso 1 (Puerta Norte Mall)",
-        "Acceso 2 (Conexion Hogar)",
+        "Acceso 2 (Conexión Hogar)",
         "Acceso 3 (Plaza Central)",
         "Acceso 4 (Estacionamiento -1)"
     )
 
     val turnosDisponibles = listOf(
-        "Turno Manana (08:30 - 15:30)",
+        "Turno Mañana (08:30 - 15:30)",
         "Turno Tarde (15:30 - 21:30)"
     )
+
+    fun obtenerFechaHoy(): String = AppDatabase.obtenerFechaHoy()
 
     fun onAccesoChange(acceso: String) {
         _uiState.update { it.copy(accesoActivo = acceso) }
@@ -78,30 +101,130 @@ class ConteoViewModel(
         _uiState.update { it.copy(filtroHistorial = filtro) }
     }
 
+    fun abrirRegistrosDelDia() {
+        _uiState.update {
+            it.copy(
+                modoHistorialDiaActual = true,
+                fechaTurnoSeleccionado = "",
+                nombreTurnoSeleccionado = "",
+                filtroHistorial = ""
+            )
+        }
+    }
+
+    fun abrirHistorialTurnosAnteriores() {
+        _uiState.update {
+            it.copy(
+                modoHistorialDiaActual = false,
+                fechaTurnoSeleccionado = "",
+                nombreTurnoSeleccionado = "",
+                filtroHistorial = ""
+            )
+        }
+    }
+
+    fun seleccionarTurnoHistorial(fecha: String, turno: String) {
+        _uiState.update {
+            it.copy(
+                fechaTurnoSeleccionado = fecha,
+                nombreTurnoSeleccionado = turno,
+                filtroHistorial = ""
+            )
+        }
+    }
+
+    fun cerrarDetalleTurnoHistorial() {
+        _uiState.update {
+            it.copy(
+                fechaTurnoSeleccionado = "",
+                nombreTurnoSeleccionado = "",
+                filtroHistorial = ""
+            )
+        }
+    }
+
     fun registrarAcceso() {
         val s = _uiState.value
         val ahora = Date()
         val fecha = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(ahora)
         val hora = SimpleDateFormat("HH:mm", Locale.getDefault()).format(ahora)
+        val nuevoTemp = RegistroAccesoEntity(
+            id = tempIdCounter--,
+            acceso = s.accesoActivo,
+            turno = s.turnoActivo,
+            compro = s.comproSeleccionado,
+            sexo = s.sexoSeleccionado,
+            rangoEtario = s.rangoEtarioSeleccionado,
+            fecha = fecha,
+            hora = hora
+        )
+
+        _uiState.update {
+            it.copy(nuevosPendientes = listOf(nuevoTemp) + it.nuevosPendientes)
+        }
+    }
+
+    private suspend fun guardarPendientesEnBd(s: ConteoUiState): Set<Long> {
+        val actualesEnBd = registros.value
+        val nuevosIds = mutableSetOf<Long>()
+
+        s.eliminadosPendientes.forEach { idBorrar ->
+            actualesEnBd.find { it.id == idBorrar }?.let { entidad ->
+                repo.eliminar(entidad)
+            }
+        }
+
+        s.editadosPendientes.forEach { (id, entidadEditada) ->
+            if (id > 0 && id !in s.eliminadosPendientes) {
+                repo.actualizar(entidadEditada)
+            }
+        }
+
+        s.nuevosPendientes.reversed().forEach { nuevo ->
+            val idInsertado = repo.agregar(
+                acceso = nuevo.acceso,
+                turno = nuevo.turno,
+                compro = nuevo.compro,
+                sexo = nuevo.sexo,
+                rangoEtario = nuevo.rangoEtario,
+                fecha = nuevo.fecha,
+                hora = nuevo.hora
+            )
+            nuevosIds.add(idInsertado)
+        }
+
+        return nuevosIds
+    }
+
+    fun guardarCambiosSesion() {
+        val s = _uiState.value
+        if (!s.hayCambiosSinGuardar) return
 
         viewModelScope.launch {
-            repo.agregar(
-                acceso = s.accesoActivo,
-                turno = s.turnoActivo,
-                compro = s.comproSeleccionado,
-                sexo = s.sexoSeleccionado,
-                rangoEtario = s.rangoEtarioSeleccionado,
-                fecha = fecha,
-                hora = hora
-            )
+            guardarPendientesEnBd(s)
             _uiState.update {
-                it.copy(mensajeConfirmacion = "Registro guardado correctamente")
+                it.copy(
+                    nuevosPendientes = emptyList(),
+                    editadosPendientes = emptyMap(),
+                    eliminadosPendientes = emptySet()
+                )
             }
         }
     }
 
-    fun limpiarMensaje() {
-        _uiState.update { it.copy(mensajeConfirmacion = null) }
+    fun descartarCambiosSesion() {
+        _uiState.update {
+            it.copy(
+                nuevosPendientes = emptyList(),
+                editadosPendientes = emptyMap(),
+                eliminadosPendientes = emptySet(),
+                mostrarAlertaSalirSinGuardar = false
+            )
+        }
+    }
+
+    fun mostrarModalSalirSinGuardar(mostrar: Boolean) {
+        _uiState.update { it.copy(mostrarAlertaSalirSinGuardar = mostrar) }
     }
 
     fun abrirModalEditar(registro: RegistroAccesoEntity) {
@@ -114,18 +237,25 @@ class ConteoViewModel(
 
     fun guardarEdicion(compro: Boolean, sexo: String, rangoEtario: String) {
         val actual = _uiState.value.registroEnEdicion ?: return
-        viewModelScope.launch {
-            repo.actualizar(
-                actual.copy(
-                    compro = compro,
-                    sexo = sexo,
-                    rangoEtario = rangoEtario
+        val actualizado = actual.copy(
+            compro = compro,
+            sexo = sexo,
+            rangoEtario = rangoEtario
+        )
+
+        _uiState.update { state ->
+            if (actual.id < 0) {
+                val nuevosActualizados = state.nuevosPendientes.map {
+                    if (it.id == actual.id) actualizado else it
+                }
+                state.copy(
+                    nuevosPendientes = nuevosActualizados,
+                    registroEnEdicion = null
                 )
-            )
-            _uiState.update {
-                it.copy(
-                    registroEnEdicion = null,
-                    mensajeConfirmacion = "Registro actualizado"
+            } else {
+                state.copy(
+                    editadosPendientes = state.editadosPendientes + (actual.id to actualizado),
+                    registroEnEdicion = null
                 )
             }
         }
@@ -141,12 +271,17 @@ class ConteoViewModel(
 
     fun confirmarEliminacion() {
         val aBorrar = _uiState.value.registroAEliminar ?: return
-        viewModelScope.launch {
-            repo.eliminar(aBorrar)
-            _uiState.update {
-                it.copy(
-                    registroAEliminar = null,
-                    mensajeConfirmacion = "Registro eliminado"
+        _uiState.update { state ->
+            if (aBorrar.id < 0) {
+                state.copy(
+                    nuevosPendientes = state.nuevosPendientes.filterNot { it.id == aBorrar.id },
+                    registroAEliminar = null
+                )
+            } else {
+                state.copy(
+                    eliminadosPendientes = state.eliminadosPendientes + aBorrar.id,
+                    editadosPendientes = state.editadosPendientes - aBorrar.id,
+                    registroAEliminar = null
                 )
             }
         }
@@ -154,5 +289,39 @@ class ConteoViewModel(
 
     fun mostrarResumenTurno(mostrar: Boolean) {
         _uiState.update { it.copy(mostrarResumenFinal = mostrar) }
+    }
+
+    fun confirmarFinalizarTurno(onFinished: () -> Unit) {
+        val s = _uiState.value
+        val fechaHoy = obtenerFechaHoy()
+
+        viewModelScope.launch {
+            val actualesEnBd = registros.value
+            val nuevosIdsInsertados = guardarPendientesEnBd(s)
+
+            val idsActivosDeHoy = actualesEnBd
+                .filter {
+                    it.fecha == fechaHoy &&
+                        it.id !in s.eliminadosPendientes
+                }
+                .map { it.id }
+                .toSet()
+
+            _uiState.update { state ->
+                state.copy(
+                    mostrarResumenFinal = false,
+                    modoHistorialDiaActual = false,
+                    fechaTurnoSeleccionado = fechaHoy,
+                    nombreTurnoSeleccionado = s.turnoActivo,
+                    filtroHistorial = "",
+                    nuevosPendientes = emptyList(),
+                    editadosPendientes = emptyMap(),
+                    eliminadosPendientes = emptySet(),
+                    idsCerradosEnTurno = state.idsCerradosEnTurno + idsActivosDeHoy + nuevosIdsInsertados
+                )
+            }
+
+            onFinished()
+        }
     }
 }

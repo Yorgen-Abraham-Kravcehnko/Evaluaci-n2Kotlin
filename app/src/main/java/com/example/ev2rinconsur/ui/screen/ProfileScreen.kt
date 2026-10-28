@@ -92,7 +92,7 @@ fun ProfileScreen(
                     HorizontalDivider()
                     ProfileRow(label = "Correo:", value = user.email)
                     HorizontalDivider()
-                    ProfileRow(label = "Sucursal:", value = "Rincon Sur - Plaza Norte")
+                    ProfileRow(label = "Sucursal:", value = "Rincón Sur - Plaza Norte")
                     HorizontalDivider()
                     ProfileRow(label = "Turno Asignado:", value = conteoState.turnoActivo)
                     HorizontalDivider()
@@ -117,7 +117,7 @@ fun ProfileScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Cerrar Sesion")
+                Text("Cerrar Sesión")
             }
         }
     }

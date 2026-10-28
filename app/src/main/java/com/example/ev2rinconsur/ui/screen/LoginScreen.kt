@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Visibility
@@ -110,13 +111,13 @@ private fun LoginScreen(
         ) {
             Icon(
                 imageVector = Icons.Filled.Store,
-                contentDescription = "Tienda Rincon Sur",
+                contentDescription = "Tienda Rincón Sur",
                 tint = PrimaryBlue,
                 modifier = Modifier.size(56.dp)
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Tienda Rincon Sur",
+                text = "Tienda Rincón Sur",
                 style = MaterialTheme.typography.headlineSmall,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Bold
@@ -143,6 +144,15 @@ private fun LoginScreen(
                         leadingIcon = {
                             Icon(Icons.Filled.Email, contentDescription = null)
                         },
+                        trailingIcon = {
+                            if (emailError != null) {
+                                Icon(
+                                    imageVector = Icons.Filled.Error,
+                                    contentDescription = "Error en correo",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
                         singleLine = true,
                         isError = emailError != null,
                         supportingText = {
@@ -161,7 +171,7 @@ private fun LoginScreen(
                     OutlinedTextField(
                         value = pass,
                         onValueChange = onPassChange,
-                        label = { Text("Contrasena") },
+                        label = { Text("Contraseña") },
                         leadingIcon = {
                             Icon(Icons.Filled.Lock, contentDescription = null)
                         },
@@ -171,7 +181,7 @@ private fun LoginScreen(
                             IconButton(onClick = { showPass = !showPass }) {
                                 Icon(
                                     imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (showPass) "Ocultar contrasena" else "Mostrar contrasena"
+                                    contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña"
                                 )
                             }
                         },
