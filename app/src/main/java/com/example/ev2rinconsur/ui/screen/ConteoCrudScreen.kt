@@ -60,7 +60,8 @@ fun ConteoCrudScreen(
             it.fecha == fechaHoy &&
                 it.acceso == state.accesoActivo &&
                 it.turno == state.turnoActivo &&
-                it.id !in state.eliminadosPendientes
+                it.id !in state.eliminadosPendientes &&
+                it.id !in state.idsCerradosEnTurno
         }
         .map { state.editadosPendientes[it.id] ?: it }
 
@@ -297,7 +298,8 @@ fun ConteoCrudScreen(
             val todosActivosHoy = state.nuevosPendientes + registros
                 .filter {
                     it.fecha == fechaHoy &&
-                        it.id !in state.eliminadosPendientes
+                        it.id !in state.eliminadosPendientes &&
+                        it.id !in state.idsCerradosEnTurno
                 }
                 .map { state.editadosPendientes[it.id] ?: it }
             val totalCierre = todosActivosHoy.size
@@ -352,10 +354,7 @@ fun ConteoCrudScreen(
                         Text("Seguir Contando")
                     }
                     Button(
-                        onClick = {
-                            vm.mostrarResumenTurno(false)
-                            onFinishTurno()
-                        },
+                        onClick = { vm.confirmarFinalizarTurno(onFinishTurno) },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
                         modifier = Modifier.weight(1f)
                     ) {

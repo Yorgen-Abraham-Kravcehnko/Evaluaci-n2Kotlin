@@ -50,12 +50,19 @@ fun HomeScreen(
     val uiState by conteoViewModel.uiState.collectAsStateWithLifecycle()
     val registros by conteoViewModel.registros.collectAsStateWithLifecycle()
 
-    val totalIngresosHoy = registros.size
-    val totalCompraronHoy = registros.count { it.compro }
+    val fechaHoy = conteoViewModel.obtenerFechaHoy()
+    val registrosHoy = registros.filter {
+        it.fecha == fechaHoy && it.id !in uiState.idsCerradosEnTurno
+    }
+
+    val totalIngresosHoy = registrosHoy.size
+    val totalCompraronHoy = registrosHoy.count { it.compro }
     val porcentajeCompraHoy = if (totalIngresosHoy > 0) (totalCompraronHoy * 100) / totalIngresosHoy else 0
 
-    val registrosTurnoSeleccionado = registros.filter {
-        it.acceso == uiState.accesoActivo && it.turno == uiState.turnoActivo
+    val registrosTurnoSeleccionado = registrosHoy.filter {
+        it.acceso == uiState.accesoActivo &&
+            it.turno == uiState.turnoActivo &&
+            it.id !in uiState.idsCerradosEnTurno
     }
     val contadosTurno = registrosTurnoSeleccionado.size
     val compraronTurno = registrosTurnoSeleccionado.count { it.compro }
@@ -160,7 +167,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Flujo Acumulado Hoy",
+                            text = "Flujo Acumulado Hoy ($fechaHoy)",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )

@@ -32,7 +32,8 @@ data class ConteoUiState(
     val mostrarAlertaSalirSinGuardar: Boolean = false,
     val nuevosPendientes: List<RegistroAccesoEntity> = emptyList(),
     val editadosPendientes: Map<Long, RegistroAccesoEntity> = emptyMap(),
-    val eliminadosPendientes: Set<Long> = emptySet()
+    val eliminadosPendientes: Set<Long> = emptySet(),
+    val idsCerradosEnTurno: Set<Long> = emptySet()
 ) {
     val hayCambiosSinGuardar: Boolean
         get() = nuevosPendientes.isNotEmpty() ||
@@ -290,4 +291,37 @@ class ConteoViewModel(
         _uiState.update { it.copy(mostrarResumenFinal = mostrar) }
     }
 
+    fun confirmarFinalizarTurno(onFinished: () -> Unit) {
+        val s = _uiState.value
+        val fechaHoy = obtenerFechaHoy()
+
+        viewModelScope.launch {
+            val actualesEnBd = registros.value
+            val nuevosIdsInsertados = guardarPendientesEnBd(s)
+
+            val idsActivosDeHoy = actualesEnBd
+                .filter {
+                    it.fecha == fechaHoy &&
+                        it.id !in s.eliminadosPendientes
+                }
+                .map { it.id }
+                .toSet()
+
+            _uiState.update { state ->
+                state.copy(
+                    mostrarResumenFinal = false,
+                    modoHistorialDiaActual = false,
+                    fechaTurnoSeleccionado = fechaHoy,
+                    nombreTurnoSeleccionado = s.turnoActivo,
+                    filtroHistorial = "",
+                    nuevosPendientes = emptyList(),
+                    editadosPendientes = emptyMap(),
+                    eliminadosPendientes = emptySet(),
+                    idsCerradosEnTurno = state.idsCerradosEnTurno + idsActivosDeHoy + nuevosIdsInsertados
+                )
+            }
+
+            onFinished()
+        }
+    }
 }
