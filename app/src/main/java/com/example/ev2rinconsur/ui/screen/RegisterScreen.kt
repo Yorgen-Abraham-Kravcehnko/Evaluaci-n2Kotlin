@@ -2,9 +2,7 @@ package com.example.ev2rinconsur.ui.screen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,15 +16,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,13 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ev2rinconsur.ui.components.AppTopBar
+import com.example.ev2rinconsur.ui.components.SelectorDesplegable
 import com.example.ev2rinconsur.ui.theme.BackgroundLight
 import com.example.ev2rinconsur.ui.theme.PrimaryBlue
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
@@ -121,7 +120,8 @@ private fun RegisterScreen(
 ) {
     var showPass by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
-    val roles = listOf("Operador de Acceso", "Supervisor de Tienda")
+    var expandedRol by remember { mutableStateOf(false) }
+    val roles = listOf("Operador de Acceso", "Supervisor de Tienda", "Jefe de Seguridad")
 
     Scaffold(
         topBar = {
@@ -145,6 +145,15 @@ private fun RegisterScreen(
                         onValueChange = onNameChange,
                         label = { Text("Nombre Completo") },
                         leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                        trailingIcon = {
+                            if (nameError != null) {
+                                Icon(
+                                    imageVector = Icons.Filled.Error,
+                                    contentDescription = "Error en nombre",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
                         singleLine = true,
                         isError = nameError != null,
                         supportingText = {
@@ -160,6 +169,15 @@ private fun RegisterScreen(
                         onValueChange = onRutChange,
                         label = { Text("RUT (Ej: 18765432-1)") },
                         leadingIcon = { Icon(Icons.Filled.Badge, contentDescription = null) },
+                        trailingIcon = {
+                            if (rutError != null) {
+                                Icon(
+                                    imageVector = Icons.Filled.Error,
+                                    contentDescription = "Error en RUT",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
                         singleLine = true,
                         isError = rutError != null,
                         supportingText = {
@@ -175,6 +193,15 @@ private fun RegisterScreen(
                         onValueChange = onEmailChange,
                         label = { Text("Correo Corporativo") },
                         leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null) },
+                        trailingIcon = {
+                            if (emailError != null) {
+                                Icon(
+                                    imageVector = Icons.Filled.Error,
+                                    contentDescription = "Error en correo",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
                         singleLine = true,
                         isError = emailError != null,
                         supportingText = {
@@ -186,31 +213,25 @@ private fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text(
-                        text = "Rol / Cargo Asignado",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                    SelectorDesplegable(
+                        label = "Rol / Cargo Asignado",
+                        valorActual = rol,
+                        opciones = roles,
+                        expandido = expandedRol,
+                        onToggleExpandido = { expandedRol = !expandedRol },
+                        onSeleccionar = { opcion ->
+                            onRolChange(opcion)
+                            expandedRol = false
+                        },
+                        leadingIcon = Icons.Filled.Work
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        roles.forEach { opcion ->
-                            FilterChip(
-                                selected = rol == opcion,
-                                onClick = { onRolChange(opcion) },
-                                label = { Text(opcion) }
-                            )
-                        }
-                    }
 
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
 
                     OutlinedTextField(
                         value = pass,
                         onValueChange = onPassChange,
-                        label = { Text("Contrasena") },
+                        label = { Text("Contraseña") },
                         leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                         singleLine = true,
                         isError = passError != null,
@@ -234,7 +255,7 @@ private fun RegisterScreen(
                     OutlinedTextField(
                         value = confirm,
                         onValueChange = onConfirmChange,
-                        label = { Text("Confirmar Contrasena") },
+                        label = { Text("Confirmar Contraseña") },
                         leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                         singleLine = true,
                         isError = confirmError != null,
