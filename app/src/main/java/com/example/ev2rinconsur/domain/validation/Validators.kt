@@ -5,7 +5,7 @@ import android.util.Patterns
 fun validateEmail(email: String): String? {
     if (email.isBlank()) return "El correo es obligatorio"
     val ok = Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    return if (!ok) "Formato de correo invalido" else null
+    return if (!ok) "Formato de correo inválido" else null
 }
 
 fun validateNameLettersOnly(name: String): String? {
@@ -21,17 +21,17 @@ fun validateRut(rut: String): String? {
 }
 
 fun validateStrongPassword(pass: String): String? {
-    if (pass.isBlank()) return "La contrasena es obligatoria"
-    if (pass.length < 8) return "Minimo 8 caracteres"
-    if (!pass.any { it.isUpperCase() }) return "Debe incluir una mayuscula"
-    if (!pass.any { it.isLowerCase() }) return "Debe incluir una minuscula"
-    if (!pass.any { it.isDigit() }) return "Debe incluir un numero"
-    if (!pass.any { !it.isLetterOrDigit() }) return "Debe incluir un simbolo"
+    if (pass.isBlank()) return "La contraseña es obligatoria"
+    if (pass.length < 8) return "Mínimo 8 caracteres"
+    if (!pass.any { it.isUpperCase() }) return "Debe incluir una mayúscula"
+    if (!pass.any { it.isLowerCase() }) return "Debe incluir una minúscula"
+    if (!pass.any { it.isDigit() }) return "Debe incluir un número"
+    if (!pass.any { !it.isLetterOrDigit() }) return "Debe incluir un símbolo"
     if (pass.contains(' ')) return "No debe contener espacios"
     return null
 }
 
 fun validateConfirm(pass: String, confirm: String): String? {
-    if (confirm.isBlank()) return "Confirma tu contrasena"
-    return if (pass != confirm) "Las contrasenas no coinciden" else null
+    if (confirm.isBlank()) return "Confirma tu contraseña"
+    return if (pass != confirm) "Las contraseñas no coinciden" else null
 }

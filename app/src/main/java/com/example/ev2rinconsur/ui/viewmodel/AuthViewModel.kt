@@ -33,13 +33,11 @@ data class RegisterUiState(
     val rol: String = "Operador de Acceso",
     val pass: String = "",
     val confirm: String = "",
-
     val nameError: String? = null,
     val rutError: String? = null,
     val emailError: String? = null,
     val passError: String? = null,
     val confirmError: String? = null,
-
     val isSubmitting: Boolean = false,
     val canSubmit: Boolean = false,
     val success: Boolean = false,
@@ -74,7 +72,7 @@ class AuthViewModel(
     }
 
     fun onLoginPassChange(value: String) {
-        val err = if (value.isBlank()) "Ingresa tu contrasena" else null
+        val err = if (value.isBlank()) "Ingresa tu contraseña" else null
         _login.update { it.copy(pass = value, passError = err, errorMsg = null) }
         recomputeLoginCanSubmit()
     }
@@ -101,7 +99,7 @@ class AuthViewModel(
                     it.copy(
                         isSubmitting = false,
                         success = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Credenciales invalidas"
+                        errorMsg = result.exceptionOrNull()?.message ?: "Credenciales inválidas"
                     )
                 }
             }
@@ -113,17 +111,15 @@ class AuthViewModel(
     }
 
     fun onNameChange(value: String) {
-        val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
-            it.copy(name = filtered, nameError = validateNameLettersOnly(filtered), errorMsg = null)
+            it.copy(name = value, nameError = validateNameLettersOnly(value), errorMsg = null)
         }
         recomputeRegisterCanSubmit()
     }
 
     fun onRutChange(value: String) {
-        val filtered = value.filter { it.isDigit() || it == '-' || it == 'k' || it == 'K' }
         _register.update {
-            it.copy(rut = filtered, rutError = validateRut(filtered), errorMsg = null)
+            it.copy(rut = value, rutError = validateRut(value), errorMsg = null)
         }
         recomputeRegisterCanSubmit()
     }
