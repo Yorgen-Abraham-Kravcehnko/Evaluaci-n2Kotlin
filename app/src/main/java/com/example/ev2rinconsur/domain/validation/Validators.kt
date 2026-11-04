@@ -1,11 +1,13 @@
 package com.example.ev2rinconsur.domain.validation
 
-import android.util.Patterns
-
+private const val DOMINIO_CORPORATIVO = "@rinconsur.cl"
+private val EMAIL_REGEX = Regex("^[A-Za-z0-9_%+-]+(\\.[A-Za-z0-9_%+-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}$")
 fun validateEmail(email: String): String? {
     if (email.isBlank()) return "El correo es obligatorio"
-    val ok = Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    return if (!ok) "Formato de correo inválido" else null
+    val limpio = email.trim().lowercase()
+    if (!EMAIL_REGEX.matches(limpio)) return "Formato de correo inválido"
+    return if (!limpio.endsWith(DOMINIO_CORPORATIVO))
+        "Usa tu correo $DOMINIO_CORPORATIVO" else null
 }
 
 fun validateNameLettersOnly(name: String): String? {
@@ -14,10 +16,28 @@ fun validateNameLettersOnly(name: String): String? {
     return if (!regex.matches(name)) "Solo letras y espacios" else null
 }
 
+fun normalizeRut(rut: String): String = rut.trim().replace(".", "").uppercase()
+
+fun calcularDvRut(cuerpo: String): Char {
+    var suma = 0
+    var multiplicador = 2
+    for (digito in cuerpo.reversed()) {
+        suma += digito.digitToInt() * multiplicador
+        multiplicador = if (multiplicador == 7) 2 else multiplicador + 1
+    }
+    return when (val resto = 11 - suma % 11) {
+        11 -> '0'
+        10 -> 'K'
+        else -> '0' + resto
+    }
+}
+
 fun validateRut(rut: String): String? {
     if (rut.isBlank()) return "El RUT es obligatorio"
-    val regex = Regex("^[0-9]{7,8}-[0-9kK]$")
-    return if (!regex.matches(rut.trim())) "Formato RUT: 12345678-9" else null
+    val limpio = normalizeRut(rut)
+    if (!Regex("^[0-9]{7,8}-[0-9K]$").matches(limpio)) return "Formato RUT: 12345678-9"
+    val (cuerpo, dv) = limpio.split("-")
+    return if (calcularDvRut(cuerpo) != dv[0]) "RUT inválido (dígito verificador)" else null
 }
 
 fun validateStrongPassword(pass: String): String? {

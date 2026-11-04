@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
@@ -20,8 +21,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +40,19 @@ import com.example.ev2rinconsur.ui.theme.PrimaryBlue
 import com.example.ev2rinconsur.ui.theme.TextMuted
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
 import com.example.ev2rinconsur.ui.viewmodel.ConteoViewModel
+import android.content.ActivityNotFoundException
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.example.ev2rinconsur.util.FotoPerfilStorage
 
 @Composable
 fun ProfileScreen(
@@ -46,6 +64,25 @@ fun ProfileScreen(
     val user by authViewModel.currentUser.collectAsStateWithLifecycle()
     val conteoState by conteoViewModel.uiState.collectAsStateWithLifecycle()
     val registros by conteoViewModel.registros.collectAsStateWithLifecycle()
+    var mostrarConfirmacion by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val tomarFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) authViewModel.guardarFotoPerfil(context.filesDir, bitmap)
+    }
+    val foto = remember(user.fotoPath) {
+        FotoPerfilStorage.cargar(user.fotoPath)?.asImageBitmap()
+    }
+    val abrirCamara: () -> Unit = {
+        try {
+            tomarFoto.launch(null)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "No hay una app de cámara disponible", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -61,25 +98,33 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(12.dp))
-            Icon(
-                imageVector = Icons.Filled.AccountCircle,
-                contentDescription = "Avatar Colaborador",
-                tint = PrimaryBlue,
-                modifier = Modifier.size(84.dp)
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = user.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = user.rol,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted
-            )
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .clickable { abrirCamara() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (foto != null) {
+                    Image(
+                        bitmap = foto,
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.AccountCircle,
+                        contentDescription = "Sin foto de perfil",
+                        tint = PrimaryBlue,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            TextButton(onClick = abrirCamara) {
+                Text(if (foto == null) "Tomar foto" else "Cambiar foto")
+            }
 
-            Spacer(Modifier.height(20.dp))
 
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth()
@@ -113,12 +158,28 @@ fun ProfileScreen(
             Spacer(Modifier.weight(1f))
 
             Button(
-                onClick = onLogout,
+                onClick = { mostrarConfirmacion = true },
                 colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cerrar Sesión")
             }
+        }
+        if (mostrarConfirmacion) {
+            AlertDialog(
+                onDismissRequest = { mostrarConfirmacion = false },
+                title = { Text("Cerrar sesión") },
+                text = { Text("¿Seguro que quieres cerrar sesión?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        mostrarConfirmacion = false
+                        onLogout()
+                    }) { Text("Confirmar", color = DangerRed) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarConfirmacion = false }) { Text("Cancelar") }
+                }
+            )
         }
     }
 }

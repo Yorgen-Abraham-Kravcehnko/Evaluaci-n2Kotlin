@@ -19,4 +19,13 @@ interface UserDao {
 
     @Query("SELECT * FROM users ORDER BY id ASC")
     suspend fun getAll(): List<UserEntity>
+
+    @Query("SELECT * FROM users WHERE rut = :rut LIMIT 1")
+    suspend fun getByRut(rut: String): UserEntity?
+
+    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): UserEntity?
+
+    @Query("UPDATE users SET fotoPath = :path WHERE id = :id")
+    suspend fun updateFoto(id: Long, path: String)
 }
