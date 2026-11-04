@@ -24,12 +24,12 @@ import java.io.File
 enum class SessionStatus { CHECKING, LOGGED_IN, LOGGED_OUT }
 
 data class LoginUiState(
-    val email: String = "colaborador@rinconsur.cl",
-    val pass: String = "Password123!",
+    val email: String = "",
+    val pass: String = "",
     val emailError: String? = null,
     val passError: String? = null,
     val isSubmitting: Boolean = false,
-    val canSubmit: Boolean = true,
+    val canSubmit: Boolean = false,
     val success: Boolean = false,
     val errorMsg: String? = null
 )
