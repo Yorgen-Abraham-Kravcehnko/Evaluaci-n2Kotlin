@@ -38,6 +38,7 @@ import com.example.ev2rinconsur.ui.theme.BackgroundLight
 import com.example.ev2rinconsur.ui.theme.PrimaryBlue
 import com.example.ev2rinconsur.ui.theme.TextMuted
 import com.example.ev2rinconsur.ui.viewmodel.ConteoViewModel
+import java.text.Normalizer
 
 private data class TarjetaTurno(
     val fecha: String,
@@ -47,17 +48,18 @@ private data class TarjetaTurno(
     val transito: Int
 )
 
+private fun normalizar(texto: String): String =
+    Normalizer.normalize(texto.trim().lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "")
+
 private fun coincideFiltro(reg: RegistroAccesoEntity, rawQuery: String): Boolean {
-    val query = rawQuery.trim().lowercase()
+    val query = normalizar(rawQuery)
     if (query.isEmpty()) return true
-    val textoCompra = if (reg.compro) "compró compro compra" else "solo tránsito transito"
-    return reg.acceso.lowercase().contains(query) ||
-        reg.fecha.lowercase().contains(query) ||
-        reg.hora.lowercase().contains(query) ||
-        reg.sexo.lowercase().contains(query) ||
-        reg.rangoEtario.lowercase().contains(query) ||
-        reg.turno.lowercase().contains(query) ||
-        textoCompra.contains(query)
+    val textoCompra = if (reg.compro) "compro compra" else "solo transito"
+    return listOf(
+        reg.acceso, reg.fecha, reg.hora, reg.sexo,
+        reg.rangoEtario, reg.turno, textoCompra
+    ).any { normalizar(it).contains(query) }
 }
 
 @Composable
