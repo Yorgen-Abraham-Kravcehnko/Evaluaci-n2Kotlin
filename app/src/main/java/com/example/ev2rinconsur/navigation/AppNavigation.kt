@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.example.ev2rinconsur.util.Vibrador
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,7 +28,8 @@ import com.example.ev2rinconsur.ui.viewmodel.SessionStatus
 fun AppNavigation(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    conteoViewModel: ConteoViewModel
+    conteoViewModel: ConteoViewModel,
+    vibrador: Vibrador
 ) {
     val session by authViewModel.session.collectAsStateWithLifecycle()
 
@@ -89,6 +91,7 @@ fun AppNavigation(
                     }
                 },
                 onGoCrud = {
+                    vibrador.inicioTurno()
                     navController.navigate(Route.Crud.path) {
                         launchSingleTop = true
                     }
@@ -128,6 +131,7 @@ fun AppNavigation(
                 vm = conteoViewModel,
                 onBack = { navController.popBackStack() },
                 onFinishTurno = {
+                    vibrador.finTurno()
                     navController.navigate(Route.History.path) {
                         popUpTo(Route.Home.path)
                         launchSingleTop = true
