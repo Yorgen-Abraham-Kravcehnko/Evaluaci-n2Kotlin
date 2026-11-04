@@ -11,5 +11,6 @@ data class UserEntity(
     val rut: String,
     val email: String,
     val rol: String,
-    val password: String
+    val password: String,
+    val salt: String = ""
 )
