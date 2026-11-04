@@ -20,5 +20,6 @@ data class UserEntity(
     val email: String,
     val rol: String,
     val password: String,
-    val salt: String = ""
+    val salt: String = "",
+    val fotoPath: String? = null
 )

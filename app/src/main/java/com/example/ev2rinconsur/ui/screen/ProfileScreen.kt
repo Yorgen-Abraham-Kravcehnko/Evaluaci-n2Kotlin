@@ -40,6 +40,19 @@ import com.example.ev2rinconsur.ui.theme.PrimaryBlue
 import com.example.ev2rinconsur.ui.theme.TextMuted
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
 import com.example.ev2rinconsur.ui.viewmodel.ConteoViewModel
+import android.content.ActivityNotFoundException
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.example.ev2rinconsur.util.FotoPerfilStorage
 
 @Composable
 fun ProfileScreen(
@@ -52,6 +65,24 @@ fun ProfileScreen(
     val conteoState by conteoViewModel.uiState.collectAsStateWithLifecycle()
     val registros by conteoViewModel.registros.collectAsStateWithLifecycle()
     var mostrarConfirmacion by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val tomarFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) authViewModel.guardarFotoPerfil(context.filesDir, bitmap)
+    }
+    val foto = remember(user.fotoPath) {
+        FotoPerfilStorage.cargar(user.fotoPath)?.asImageBitmap()
+    }
+    val abrirCamara: () -> Unit = {
+        try {
+            tomarFoto.launch(null)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "No hay una app de cámara disponible", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -67,25 +98,33 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(12.dp))
-            Icon(
-                imageVector = Icons.Filled.AccountCircle,
-                contentDescription = "Avatar Colaborador",
-                tint = PrimaryBlue,
-                modifier = Modifier.size(84.dp)
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = user.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = user.rol,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted
-            )
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .clickable { abrirCamara() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (foto != null) {
+                    Image(
+                        bitmap = foto,
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.AccountCircle,
+                        contentDescription = "Sin foto de perfil",
+                        tint = PrimaryBlue,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            TextButton(onClick = abrirCamara) {
+                Text(if (foto == null) "Tomar foto" else "Cambiar foto")
+            }
 
-            Spacer(Modifier.height(20.dp))
 
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth()

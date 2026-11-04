@@ -15,6 +15,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import android.graphics.Bitmap
+import com.example.ev2rinconsur.util.FotoPerfilStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 enum class SessionStatus { CHECKING, LOGGED_IN, LOGGED_OUT }
 
@@ -229,5 +234,16 @@ class AuthViewModel(
 
     fun clearRegisterResult() {
         _register.update { RegisterUiState() }
+    }
+
+    fun guardarFotoPerfil(directorio: File, bitmap: Bitmap) {
+        val user = _currentUser.value
+        viewModelScope.launch {
+            val path = withContext(Dispatchers.IO) {
+                FotoPerfilStorage.guardar(directorio, user.id, bitmap)
+            }
+            repository.actualizarFoto(user.id, path)
+            _currentUser.value = user.copy(fotoPath = path)
+        }
     }
 }

@@ -41,6 +41,7 @@ class UserRepository(
         return userDao.getById(id)
     }
 
+    suspend fun actualizarFoto(id: Long, path: String) = userDao.updateFoto(id, path)
     suspend fun register(
         name: String,
         rut: String,
