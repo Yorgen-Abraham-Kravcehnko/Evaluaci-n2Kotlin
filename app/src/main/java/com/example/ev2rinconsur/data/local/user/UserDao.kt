@@ -19,4 +19,7 @@ interface UserDao {
 
     @Query("SELECT * FROM users ORDER BY id ASC")
     suspend fun getAll(): List<UserEntity>
+
+    @Query("SELECT * FROM users WHERE rut = :rut LIMIT 1")
+    suspend fun getByRut(rut: String): UserEntity?
 }

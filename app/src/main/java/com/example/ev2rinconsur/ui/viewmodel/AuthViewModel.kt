@@ -58,7 +58,7 @@ class AuthViewModel(
         UserEntity(
             id = 1L,
             name = "Sebastián Curi",
-            rut = "19876543-2",
+            rut = "19876543-0",
             email = "colaborador@rinconsur.cl",
             rol = "Operador de Acceso",
             password = ""

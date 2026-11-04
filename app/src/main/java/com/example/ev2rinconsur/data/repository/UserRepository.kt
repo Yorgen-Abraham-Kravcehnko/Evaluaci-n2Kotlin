@@ -4,7 +4,7 @@ import com.example.ev2rinconsur.domain.validation.PasswordHasher
 import com.example.ev2rinconsur.data.local.database.AppDatabase
 import com.example.ev2rinconsur.data.local.user.UserDao
 import com.example.ev2rinconsur.data.local.user.UserEntity
-
+import com.example.ev2rinconsur.domain.validation.normalizeRut
 class UserRepository(
     private val userDao: UserDao
 ) {
@@ -28,7 +28,7 @@ class UserRepository(
 
     suspend fun login(email: String, password: String): Result<UserEntity> {
         ensureSeedUsers()
-        val user = userDao.getByEmail(email)
+        val user = userDao.getByEmail(email.trim().lowercase())
         return if (user != null && PasswordHasher.verify(password, user.salt, user.password)) {
             Result.success(user)
         } else {
@@ -44,15 +44,20 @@ class UserRepository(
         password: String
     ): Result<Long> {
         ensureSeedUsers()
-        if (userDao.getByEmail(email) != null) {
+        val emailNorm = email.trim().lowercase()
+        val rutNorm = normalizeRut(rut)
+        if (userDao.getByEmail(emailNorm) != null) {
             return Result.failure(IllegalStateException("El correo ya está registrado"))
+        }
+        if (userDao.getByRut(rutNorm) != null) {
+            return Result.failure(IllegalStateException("El RUT ya está registrado"))
         }
         val salt = PasswordHasher.generateSalt()
         val id = userDao.insert(
             UserEntity(
                 name = name,
-                rut = rut,
-                email = email,
+                rut = rutNorm,
+                email = emailNorm,
                 rol = rol,
                 password = PasswordHasher.hash(password, salt),
                 salt = salt
