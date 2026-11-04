@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.ev2rinconsur.data.datastore.SessionManager
 import com.example.ev2rinconsur.data.local.database.AppDatabase
 import com.example.ev2rinconsur.data.repository.RegistroRepository
 import com.example.ev2rinconsur.data.repository.UserRepository
@@ -27,12 +28,13 @@ class MainActivity : ComponentActivity() {
         val db = AppDatabase.getInstance(applicationContext)
         val userRepository = UserRepository(db.userDao())
         val registroRepository = RegistroRepository(db.registroAccesoDao())
+        val sessionManager = SessionManager(applicationContext)
 
         setContent {
             EV2RinconSurTheme {
                 val navController = rememberNavController()
                 val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory(userRepository)
+                    factory = AuthViewModelFactory(userRepository, sessionManager)
                 )
                 val conteoViewModel: ConteoViewModel = viewModel(
                     factory = ConteoViewModelFactory(registroRepository)

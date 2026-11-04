@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
@@ -20,8 +21,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +51,7 @@ fun ProfileScreen(
     val user by authViewModel.currentUser.collectAsStateWithLifecycle()
     val conteoState by conteoViewModel.uiState.collectAsStateWithLifecycle()
     val registros by conteoViewModel.registros.collectAsStateWithLifecycle()
+    var mostrarConfirmacion by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -113,12 +119,28 @@ fun ProfileScreen(
             Spacer(Modifier.weight(1f))
 
             Button(
-                onClick = onLogout,
+                onClick = { mostrarConfirmacion = true },
                 colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cerrar Sesión")
             }
+        }
+        if (mostrarConfirmacion) {
+            AlertDialog(
+                onDismissRequest = { mostrarConfirmacion = false },
+                title = { Text("Cerrar sesión") },
+                text = { Text("¿Seguro que quieres cerrar sesión?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        mostrarConfirmacion = false
+                        onLogout()
+                    }) { Text("Confirmar", color = DangerRed) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarConfirmacion = false }) { Text("Cancelar") }
+                }
+            )
         }
     }
 }

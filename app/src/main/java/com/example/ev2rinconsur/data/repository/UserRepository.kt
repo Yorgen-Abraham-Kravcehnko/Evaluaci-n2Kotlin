@@ -36,6 +36,11 @@ class UserRepository(
         }
     }
 
+    suspend fun getById(id: Long): UserEntity? {
+        ensureSeedUsers()
+        return userDao.getById(id)
+    }
+
     suspend fun register(
         name: String,
         rut: String,

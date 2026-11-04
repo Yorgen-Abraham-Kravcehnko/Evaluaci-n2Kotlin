@@ -9,11 +9,14 @@ import com.example.ev2rinconsur.domain.validation.validateEmail
 import com.example.ev2rinconsur.domain.validation.validateNameLettersOnly
 import com.example.ev2rinconsur.domain.validation.validateRut
 import com.example.ev2rinconsur.domain.validation.validateStrongPassword
+import com.example.ev2rinconsur.data.datastore.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+enum class SessionStatus { CHECKING, LOGGED_IN, LOGGED_OUT }
 
 data class LoginUiState(
     val email: String = "colaborador@rinconsur.cl",
@@ -25,6 +28,7 @@ data class LoginUiState(
     val success: Boolean = false,
     val errorMsg: String? = null
 )
+
 
 data class RegisterUiState(
     val name: String = "",
@@ -45,7 +49,8 @@ data class RegisterUiState(
 )
 
 class AuthViewModel(
-    private val repository: UserRepository
+    private val repository: UserRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _login = MutableStateFlow(LoginUiState())
@@ -65,6 +70,31 @@ class AuthViewModel(
         )
     )
     val currentUser: StateFlow<UserEntity> = _currentUser
+    private val _session = MutableStateFlow(SessionStatus.CHECKING)
+    val session: StateFlow<SessionStatus> = _session
+
+    init {
+        viewModelScope.launch {
+            val id = sessionManager.obtenerUserId()
+            val user = id?.let { repository.getById(it) }
+            if (user != null) {
+                _currentUser.value = user
+                _session.value = SessionStatus.LOGGED_IN
+            } else {
+                if (id != null) sessionManager.cerrarSesion()
+                _session.value = SessionStatus.LOGGED_OUT
+            }
+        }
+    }
+
+    fun logout(onDone: () -> Unit) {
+        viewModelScope.launch {
+            sessionManager.cerrarSesion()
+            _session.value = SessionStatus.LOGGED_OUT
+            _login.update { LoginUiState() }
+            onDone()
+        }
+    }
 
     fun onLoginEmailChange(value: String) {
         _login.update { it.copy(email = value, emailError = validateEmail(value), errorMsg = null) }
@@ -91,9 +121,14 @@ class AuthViewModel(
             delay(300)
 
             val result = repository.login(s.email.trim(), s.pass)
+            val user = result.getOrNull()
+            if (user != null) {
+                _currentUser.value = user
+                sessionManager.guardarSesion(user.id)
+                _session.value = SessionStatus.LOGGED_IN
+            }
             _login.update {
-                if (result.isSuccess) {
-                    result.getOrNull()?.let { user -> _currentUser.value = user }
+                if (user != null) {
                     it.copy(isSubmitting = false, success = true, errorMsg = null)
                 } else {
                     it.copy(

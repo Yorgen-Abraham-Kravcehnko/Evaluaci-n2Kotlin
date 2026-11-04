@@ -13,6 +13,15 @@ import com.example.ev2rinconsur.ui.screen.RegisterScreenVm
 import com.example.ev2rinconsur.ui.screen.TotalesScreen
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
 import com.example.ev2rinconsur.ui.viewmodel.ConteoViewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ev2rinconsur.ui.viewmodel.SessionStatus
 
 @Composable
 fun AppNavigation(
@@ -20,9 +29,22 @@ fun AppNavigation(
     authViewModel: AuthViewModel,
     conteoViewModel: ConteoViewModel
 ) {
+    val session by authViewModel.session.collectAsStateWithLifecycle()
+
+    if (session == SessionStatus.CHECKING) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val startDestination = remember {
+        if (session == SessionStatus.LOGGED_IN) Route.Home.path else Route.Login.path
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path
+        startDestination = startDestination
     ) {
         composable(Route.Login.path) {
             LoginScreenVm(
@@ -91,9 +113,11 @@ fun AppNavigation(
                 conteoViewModel = conteoViewModel,
                 onBack = { navController.popBackStack() },
                 onLogout = {
-                    navController.navigate(Route.Login.path) {
-                        popUpTo(Route.Home.path) { inclusive = true }
-                        launchSingleTop = true
+                    authViewModel.logout {
+                        navController.navigate(Route.Login.path) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 }
             )

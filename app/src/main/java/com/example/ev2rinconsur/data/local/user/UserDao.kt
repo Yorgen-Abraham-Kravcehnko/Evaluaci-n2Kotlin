@@ -22,4 +22,7 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE rut = :rut LIMIT 1")
     suspend fun getByRut(rut: String): UserEntity?
+
+    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): UserEntity?
 }
