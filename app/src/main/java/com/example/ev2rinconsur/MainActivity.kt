@@ -9,10 +9,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.ev2rinconsur.data.datastore.SessionManager
 import com.example.ev2rinconsur.data.local.database.AppDatabase
 import com.example.ev2rinconsur.data.repository.RegistroRepository
 import com.example.ev2rinconsur.data.repository.UserRepository
 import com.example.ev2rinconsur.navigation.AppNavigation
+import com.example.ev2rinconsur.util.Vibrador
 import com.example.ev2rinconsur.ui.theme.EV2RinconSurTheme
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModel
 import com.example.ev2rinconsur.ui.viewmodel.AuthViewModelFactory
@@ -27,12 +29,14 @@ class MainActivity : ComponentActivity() {
         val db = AppDatabase.getInstance(applicationContext)
         val userRepository = UserRepository(db.userDao())
         val registroRepository = RegistroRepository(db.registroAccesoDao())
+        val sessionManager = SessionManager(applicationContext)
+        val vibrador = Vibrador(applicationContext)
 
         setContent {
             EV2RinconSurTheme {
                 val navController = rememberNavController()
                 val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory(userRepository)
+                    factory = AuthViewModelFactory(userRepository, sessionManager)
                 )
                 val conteoViewModel: ConteoViewModel = viewModel(
                     factory = ConteoViewModelFactory(registroRepository)
@@ -42,7 +46,8 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(
                         navController = navController,
                         authViewModel = authViewModel,
-                        conteoViewModel = conteoViewModel
+                        conteoViewModel = conteoViewModel,
+                        vibrador = vibrador
                     )
                 }
             }

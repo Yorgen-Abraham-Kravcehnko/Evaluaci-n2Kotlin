@@ -14,7 +14,7 @@ import java.util.Locale
 
 @Database(
     entities = [UserEntity::class, RegistroAccesoEntity::class],
-    version = 4,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -33,14 +33,14 @@ abstract class AppDatabase : RoomDatabase() {
         fun seedUsersList(): List<UserEntity> = listOf(
             UserEntity(
                 name = "Sebastián Curi",
-                rut = "19876543-2",
+                rut = "19876543-0",
                 email = "colaborador@rinconsur.cl",
                 rol = "Operador de Acceso",
                 password = "Password123!"
             ),
             UserEntity(
                 name = "Luis Carvallo",
-                rut = "20123456-7",
+                rut = "20123456-5",
                 email = "admin@rinconsur.cl",
                 rol = "Supervisor de Tienda",
                 password = "Admin123!"
